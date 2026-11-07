@@ -15,7 +15,7 @@
 - [x] **Paso 3:** API REST de Perfiles con **Vulnerabilidad 5.1 (SQL Injection)** y **Vulnerabilidad 5.2 (IDOR)** + test automático en JUnit.
 - [x] **Paso 4:** Frontend completo en React + Vite (puerto `5173`), liviano y sin librerías pesadas para cuidar la memoria RAM.
 - [x] **Paso 5:** Documentación técnica completa (`README.md`, matriz de auditoría CWE/OWASP y guía conceptual para la defensa oral).
-- [ ] **Paso 6:** Creación de la rama `remediado` con 3 commits separados (uno por cada CWE corregido).
+- [x] **Paso 6:** Creación de la rama `remediado` con 3 commits separados (uno por cada CWE corregido) y suite de tests defensivos en JUnit.
 
 ---
 
@@ -200,8 +200,10 @@ El Frontend está construido con **React 18 + Vite** en el puerto fijo `5173` (e
 Necesitás dos terminales abiertas (por ejemplo, dividiendo la terminal en VS Code):
 
 1. **Terminal 1 – Backend (Puerto 8080):**
+   *(Nota importante en la rama `remediado`: recordá definir primero `JWT_SECRET` con al menos 32 caracteres porque ya no está hardcodeada en `application.properties`):*
    ```powershell
    cd D:\Facultad\2026\SDS\tpi\TP_SDS_Cuidadores\backend
+   $env:JWT_SECRET="ClaveAleatoriaSeguraParaEntornoLocalUTNFRC2026_4K2A!"
    .\mvnw.cmd spring-boot:run
    ```
 

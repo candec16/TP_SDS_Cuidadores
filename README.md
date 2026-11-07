@@ -50,9 +50,11 @@ $env:DB_USERNAME="postgres"
 $env:DB_PASSWORD="tu_password_local"
 ```
 
-### Paso 2: Iniciar el Backend (Puerto `8080`)
+### Paso 2: Definir el secreto JWT e iniciar el Backend (Puerto `8080`)
+En la rama **`remediado`**, el secreto criptográfico JWT ya no está escrito en el código (`CWE-798` mitigado), por lo que debés definir la variable de entorno `JWT_SECRET` (mínimo 32 caracteres) antes de levantar Spring Boot:
 ```powershell
 cd backend
+$env:JWT_SECRET="ClaveAleatoriaSeguraParaEntornoLocalUTNFRC2026_4K2A!"
 .\mvnw.cmd spring-boot:run
 ```
 Al iniciar por primera vez, Hibernate crea las tablas `users` y `profiles` automáticamente y `DataInitializer` carga **4 perfiles ficticios** de distintas zonas de Córdoba.

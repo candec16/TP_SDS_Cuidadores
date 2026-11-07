@@ -5,6 +5,7 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -13,24 +14,40 @@ import java.security.Key;
 import java.util.Date;
 
 /**
- * Servicio encargado de generar, firmar y verificar tokens JWT (HS256).
+ * Servicio encargado de generar, firmar y verificar tokens JWT (HS256)
+ * con validaciones estrictas de entropía/longitud de clave y expiración obligatoria.
  */
 @Service
 public class JwtService {
 
+    private static final int MIN_SECRET_BYTES = 32;
+    private static final String COMPROMISED_DEMO_SECRET = "clave_secreta_super_debil_1234567890";
+
     // =========================================================================
-    // VULNERABILIDAD INTENCIONAL 5.3 (a): Clave secreta débil y hardcodeada
-    // (CWE-798: Use of Hard-coded Credentials / CWE-321: Hard-coded Cryptographic Key)
-    // El secreto proviene en texto claro desde application.properties en el repositorio,
-    // y el tiempo de expiración es excesivo (24 horas = 86400000 ms).
-    // Cualquier atacante que conozca ese secreto puede forjar un JWT válido con el
-    // email de cualquier usuario ("sub") y suplantar su identidad sin su contraseña.
+    // MITIGACIÓN 5.3 (a): Gestión segura del secreto criptográfico (CWE-798 / CWE-321)
+    // El secreto proviene obligatoriamente de la variable de entorno JWT_SECRET y se
+    // valida al iniciar la aplicación que cumpla al menos 256 bits (32 bytes) y no
+    // reutilice claves comprometidas conocidas.
     // =========================================================================
     @Value("${jwt.secret}")
     private String jwtSecret;
 
     @Value("${jwt.expiration}")
     private long jwtExpirationMs;
+
+    @PostConstruct
+    public void validateSecretConfiguration() {
+        if (jwtSecret == null || jwtSecret.getBytes(StandardCharsets.UTF_8).length < MIN_SECRET_BYTES) {
+            throw new IllegalStateException(
+                    "Configuración insegura: la variable de entorno JWT_SECRET debe tener al menos 32 caracteres."
+            );
+        }
+        if (COMPROMISED_DEMO_SECRET.equals(jwtSecret)) {
+            throw new IllegalStateException(
+                    "Configuración insegura: no se permite utilizar el secreto de demostración comprometido."
+            );
+        }
+    }
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
@@ -51,26 +68,29 @@ public class JwtService {
                 .compact();
     }
 
-    /**
-     * Extrae el email ("sub") del token verificando la firma criptográfica.
-     * Lanza JwtException si la firma es inválida o el token expiró.
-     */
-    public String extractEmail(String token) {
-        Claims claims = Jwts.parserBuilder()
+    private Claims extractAllClaims(String token) {
+        return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
-        return claims.getSubject();
+    }
+
+    public String extractEmail(String token) {
+        return extractAllClaims(token).getSubject();
     }
 
     public boolean isTokenValid(String token) {
         try {
-            String email = extractEmail(token);
-            return email != null && !email.isBlank();
+            Claims claims = extractAllClaims(token);
+            String email = claims.getSubject();
+            Date expiration = claims.getExpiration();
+            return email != null
+                    && !email.isBlank()
+                    && expiration != null
+                    && expiration.after(new Date());
         } catch (JwtException | IllegalArgumentException ex) {
             return false;
         }
     }
 }
-
