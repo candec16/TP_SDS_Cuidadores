@@ -113,13 +113,17 @@ public class ProfileService {
                 ));
 
         // =========================================================================
-        // VULNERABILIDAD INTENCIONAL 5.2: IDOR - Referencia Directa Insegura a Objetos
-        // (CWE-639: Authorization Bypass Through User-Controlled Key / OWASP A01:2021)
-        // Spring Security exige que exista un token JWT válido (authenticatedEmail),
-        // pero este método NO verifica que profile.getUser().getEmail() coincida con
-        // authenticatedEmail. Cualquier usuario autenticado B puede enviar un PUT a
-        // /api/profiles/{id_de_A} y sobrescribir el perfil ajeno de A.
+        // MITIGACIÓN 5.2: Control de Autorización a Nivel de Objeto (CWE-639)
+        // Se verifica estrictamente en el servidor que el propietario real del perfil
+        // coincida con el usuario autenticado mediante el token JWT. Si no coinciden,
+        // se rechaza la operación con 403 Forbidden.
         // =========================================================================
+        if (!profile.getUser().getEmail().equalsIgnoreCase(authenticatedEmail)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Acceso denegado: no tenés permiso para modificar un perfil que pertenece a otro usuario"
+            );
+        }
 
         profile.setNombre(request.nombre().trim());
         profile.setApellido(request.apellido().trim());
