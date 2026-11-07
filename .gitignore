@@ -5,9 +5,6 @@ frontend/.env
 
 # Backend (Spring Boot/Maven)
 backend/target/
-backend/.mvn/
-backend/mvnw
-backend/mvnw.cmd
 
 # Entornos y SO
 .vscode/

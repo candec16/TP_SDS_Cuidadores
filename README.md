@@ -1,1 +1,3 @@
 # Plataforma de Cuidadores - Seguridad de Software
+Se propone una aplicación web sencilla donde profesionales del cuidado de personas mayores registran su perfil (nombre, apellido, zona de residencia, descripción, intereses y estudios) y cualquier persona puede consultarlos y filtrarlos por zona.
+El proyecto tiene un doble objetivo. Es una aplicación funcional completa (autenticación, persistencia e interfaz) y, a la vez, incluye tres vulnerabilidades intencionales, inyección SQL, IDOR y autenticación defectuosa (Broken Authentication), para estudiar cómo se producen, qué impacto tienen y cómo se corrigen. La aplicación sirve así como laboratorio práctico para la materia.

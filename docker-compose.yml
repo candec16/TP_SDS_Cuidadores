@@ -1,0 +1,21 @@
+# ============================================================================
+# OPCIONAL: Solo para integrantes o docentes que prefieran levantar PostgreSQL
+# con Docker en lugar de usar PostgreSQL instalado localmente en el sistema.
+# Uso opcional: docker compose up -d
+# ============================================================================
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cuidadores_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cuidadores_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-1607}
+    ports:
+      - "5432:5432"
+    volumes:
+      - cuidadores_pgdata:/var/lib/postgresql/data
+
+volumes:
+  cuidadores_pgdata:
