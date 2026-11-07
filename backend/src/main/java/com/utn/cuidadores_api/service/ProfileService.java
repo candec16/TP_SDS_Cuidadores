@@ -6,8 +6,6 @@ import com.utn.cuidadores_api.model.Profile;
 import com.utn.cuidadores_api.model.User;
 import com.utn.cuidadores_api.repository.ProfileRepository;
 import com.utn.cuidadores_api.repository.UserRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,9 +22,6 @@ public class ProfileService {
     private final ProfileRepository profileRepository;
     private final UserRepository userRepository;
 
-    @PersistenceContext
-    private EntityManager entityManager;
-
     public ProfileService(ProfileRepository profileRepository, UserRepository userRepository) {
         this.profileRepository = profileRepository;
         this.userRepository = userRepository;
@@ -36,7 +31,6 @@ public class ProfileService {
      * Consulta pública de perfiles con filtro opcional por zona.
      */
     @Transactional(readOnly = true)
-    @SuppressWarnings("unchecked")
     public List<ProfileResponse> buscarPerfiles(String zona) {
         if (zona == null || zona.isBlank()) {
             return profileRepository.findAll().stream()
@@ -44,18 +38,21 @@ public class ProfileService {
                     .toList();
         }
 
-        // =========================================================================
-        // VULNERABILIDAD INTENCIONAL 5.1: Inyección SQL (CWE-89 / OWASP A03:2021)
-        // El parámetro 'zona' enviado por el usuario se concatena directamente dentro
-        // de una sentencia SQL nativa en vez de usar parámetros enlazados o Spring Data.
-        // Demostración: buscar  zzz' OR '1'='1  altera la condición lógica WHERE y
-        // devuelve todos los perfiles registrados aunque la zona no exista.
-        // =========================================================================
-        String sql = "SELECT * FROM profiles WHERE zona ILIKE '%" + zona + "%' OR zona = '" + zona + "'";
+        String zonaLimpia = zona.trim();
+        if (zonaLimpia.length() > 100) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El texto de búsqueda por zona no puede superar los 100 caracteres"
+            );
+        }
 
-        List<Profile> resultados = entityManager
-                .createNativeQuery(sql, Profile.class)
-                .getResultList();
+        // =========================================================================
+        // MITIGACIÓN 5.1: Prevención de Inyección SQL (CWE-89 / OWASP A03:2021)
+        // Se reemplaza la consulta SQL nativa concatenada por un método derivado de
+        // Spring Data JPA, que utiliza consultas parametrizadas (PreparedStatement)
+        // separando estrictamente la lógica SQL de los datos del usuario.
+        // =========================================================================
+        List<Profile> resultados = profileRepository.findByZonaContainingIgnoreCase(zonaLimpia);
 
         return resultados.stream()
                 .map(ProfileResponse::fromEntity)
