@@ -1,0 +1,15 @@
+# Frontend (React/Vite)
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+
+# Backend (Spring Boot/Maven)
+backend/target/
+backend/.mvn/
+backend/mvnw
+backend/mvnw.cmd
+
+# Entornos y SO
+.vscode/
+.idea/
+*.log
